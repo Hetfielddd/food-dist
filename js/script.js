@@ -97,7 +97,7 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    setTimer('.timer', '2023-11-01');
+    setTimer('.timer', '2024-11-01');
 
     //modal
 
@@ -209,36 +209,83 @@ window.addEventListener('DOMContentLoaded', () => {
     // Forms
 
     const forms = document.querySelectorAll('form');
+    const message = {
+        loading: 'img/form/spinner.svg',
+        succes: 'Спасибо! Скоро мы с вами свяжемся',
+        failure: 'Что-то пошло не так...'
+    };
+
+    forms.forEach(item => {
+        postData(item);
+    });
 
     function postData(form) {
-        form.addEventListener('submit', (e) => {
+        forms.addEventListener('submit', (e) => {
             e.preventDefault();
 
-            const request = new XMLHttpRequest();
-            request.open('POST', 'server.php');
+            let statusMesage = document.createElement('img');
+            statusMesage.src = message.loading;
+            statusMesage.alt = loading;
+            statusMesage.style.cssText = `
+                display: block;
+                margin: 0 auto;
+            `;
+            forms.insertAdjacentElement('afterend', statusMesage);
+
+            const formData = new FormData(form);
+
+            const object = {};
+            formData.forEach(function(value, key) {
+                object[key] = value;
+            });
+
+            fetch('server.php', {
+                method: 'POST',
+                headers: {
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify(object)
+            })
+            .then(data => data.json())
+            .then(data => {
+                console.log(data);
+                showThanksModal(message.succes);
+            })
+            .catch(() => message.failure)
+            .finally(() => {
+                form.reset();
+                statusMesage.remove();
+            });
         });
     }
-    
+
+    function showThanksModal(message) {
+        const prevModalDialog = document.querySelector('.modal__dialog');
+
+        prevModalDialog.classList.add('hide');
+        openModal();
+
+        const thanksModal = document.createElement('div');
+        thanksModal.classList.add('modal__dialog');
+        thanksModal.innerHTML = `
+        <div class="modal__content">
+            <div class="modal__close" data-close>×</div>
+            <div class="modal__title">${message}</div>
+        </div>
+        `;
+        document.querySelector('.modal').append(thanksModal);
+        setTimeout(() => {
+            thanksModal.remove();
+            prevModalDialog.classList.add('show');
+            prevModalDialog.classList.remove('hide');
+            closeModal();
+        }, 4000);
+    }
+
+    fetch('db.json')
+        .then(data => data.json())
+        .then(res => console.log(res));
+
 });
 
 
-'use strict'
-const urlObj = {
-    protocol: 'https',
-    domain: 'mysite.com'
-}
- 
-function showCurrentURL() {
-    const extractCurrDomain = () => {
-        return this.domain;
-    }
-    const extractCurrProtocol = () => {
-        return this.protocol;
-    }
- 
-    console.log(`${extractCurrProtocol()}://${extractCurrDomain()}`)
-}
- 
-const url = showCurrentURL.bind(urlObj);
- 
-url();
